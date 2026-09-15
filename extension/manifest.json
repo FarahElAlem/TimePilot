@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "TimePilot",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "Pointe l'arrivée, les pauses et calcule automatiquement l'heure de départ sur une base de 8h + 30 min de pause obligatoire.",
   "permissions": [
     "downloads",

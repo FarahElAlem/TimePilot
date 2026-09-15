@@ -1,4 +1,4 @@
-const CACHE = "timepilot-v5";
+const CACHE = "timepilot-v6";
 const ASSETS = [
   "./",
   "./index.html",

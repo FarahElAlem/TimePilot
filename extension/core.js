@@ -45,6 +45,35 @@ export function parseTimeToMinutes(value) {
   return h * 60 + m;
 }
 
+function buildRangeTimestamps(startValue, endValue, baseDate = new Date()) {
+  const startMinutes = parseTimeToMinutes(startValue);
+  const endMinutes = parseTimeToMinutes(endValue);
+
+  if (startMinutes === null || endMinutes === null) {
+    throw new Error("Heure de début ou de fin invalide");
+  }
+  if (endMinutes <= startMinutes) {
+    throw new Error("L’heure de fin doit être après l’heure de début");
+  }
+
+  const start = new Date(baseDate);
+  start.setHours(Math.floor(startMinutes / 60), startMinutes % 60, 0, 0);
+
+  const end = new Date(baseDate);
+  end.setHours(Math.floor(endMinutes / 60), endMinutes % 60, 0, 0);
+
+  return { startTs: start.getTime(), endTs: end.getTime() };
+}
+
+function assertNoTimedOverlap(day, startTs, endTs, excludedId = null, now = Date.now()) {
+  const overlaps = (day?.pauses || []).some(p => {
+    if (!p?.startTs || p.id === excludedId) return false;
+    const otherEnd = p.endTs || now;
+    return startTs < otherEnd && endTs > p.startTs;
+  });
+  if (overlaps) throw new Error("Cette période chevauche une autre pause");
+}
+
 export function createEmptyDay(date = localDateKey()) {
   return {
     date,
@@ -57,28 +86,32 @@ export function createEmptyDay(date = localDateKey()) {
 
 export function activePause(day) {
   if (!day?.pauses?.length) return null;
-  const last = day.pauses[day.pauses.length - 1];
-  return last && last.startTs && !last.endTs ? last : null;
+  for (let i = day.pauses.length - 1; i >= 0; i -= 1) {
+    const p = day.pauses[i];
+    if (p?.startTs && !p.endTs) return p;
+  }
+  return null;
+}
+
+export function pauseEntryMinutes(pause, now = Date.now()) {
+  if (Number.isFinite(pause?.durationMinutes)) {
+    return Math.max(0, pause.durationMinutes);
+  }
+  if (!pause?.startTs) return 0;
+  const end = pause.endTs || now;
+  return Math.max(0, (end - pause.startTs) / 60000);
 }
 
 export function pauseMinutes(day, now = Date.now()) {
   if (!day?.pauses?.length) return 0;
-  return day.pauses.reduce((sum, p) => {
-    if (Number.isFinite(p?.durationMinutes)) {
-      return sum + Math.max(0, p.durationMinutes);
-    }
-    if (!p?.startTs) return sum;
-    const end = p.endTs || now;
-    return sum + Math.max(0, (end - p.startTs) / 60000);
-  }, 0);
+  return day.pauses.reduce((sum, p) => sum + pauseEntryMinutes(p, now), 0);
 }
 
 export function timedPauseMinutes(day, now = Date.now()) {
   if (!day?.pauses?.length) return 0;
   return day.pauses.reduce((sum, p) => {
     if (!p?.startTs) return sum;
-    const end = p.endTs || now;
-    return sum + Math.max(0, (end - p.startTs) / 60000);
+    return sum + pauseEntryMinutes(p, now);
   }, 0);
 }
 
@@ -91,15 +124,98 @@ export function manualPauseMinutes(day) {
 
 export function addManualPause(day, minutes, now = Date.now()) {
   const value = Number(minutes);
-  if (!Number.isFinite(value) || value <= 0) return day;
+  if (!Number.isFinite(value) || value <= 0) {
+    throw new Error("Saisis une durée supérieure à 0 minute");
+  }
   return {
     ...day,
     pauses: [...(day.pauses || []), {
       id: crypto.randomUUID(),
       manual: true,
+      source: "duration",
       durationMinutes: value,
       createdAt: now
     }],
+    updatedAt: now,
+    syncStatus: "pending"
+  };
+}
+
+export function updatePauseDuration(day, pauseId, minutes, now = Date.now()) {
+  const value = Number(minutes);
+  if (!Number.isFinite(value) || value <= 0) {
+    throw new Error("Saisis une durée supérieure à 0 minute");
+  }
+  if (!(day.pauses || []).some(p => p.id === pauseId)) {
+    throw new Error("Pause introuvable");
+  }
+
+  return {
+    ...day,
+    pauses: (day.pauses || []).map(p => p.id === pauseId ? {
+      id: p.id,
+      manual: true,
+      source: "duration",
+      durationMinutes: value,
+      createdAt: p.createdAt || now,
+      updatedAt: now
+    } : p),
+    updatedAt: now,
+    syncStatus: "pending"
+  };
+}
+
+export function addManualPauseRange(day, startValue, endValue, baseDate = new Date()) {
+  const { startTs, endTs } = buildRangeTimestamps(startValue, endValue, baseDate);
+  const now = Date.now();
+  assertNoTimedOverlap(day, startTs, endTs, null, now);
+
+  return {
+    ...day,
+    pauses: [...(day.pauses || []), {
+      id: crypto.randomUUID(),
+      manual: true,
+      range: true,
+      source: "range",
+      startTs,
+      endTs,
+      createdAt: now
+    }],
+    updatedAt: now,
+    syncStatus: "pending"
+  };
+}
+
+export function updatePauseRange(day, pauseId, startValue, endValue, baseDate = new Date()) {
+  const { startTs, endTs } = buildRangeTimestamps(startValue, endValue, baseDate);
+  const now = Date.now();
+  if (!(day.pauses || []).some(p => p.id === pauseId)) {
+    throw new Error("Pause introuvable");
+  }
+  assertNoTimedOverlap(day, startTs, endTs, pauseId, now);
+
+  return {
+    ...day,
+    pauses: (day.pauses || []).map(p => p.id === pauseId ? {
+      id: p.id,
+      manual: true,
+      range: true,
+      source: "range",
+      startTs,
+      endTs,
+      createdAt: p.createdAt || now,
+      updatedAt: now
+    } : p),
+    updatedAt: now,
+    syncStatus: "pending"
+  };
+}
+
+export function deletePause(day, pauseId, now = Date.now()) {
+  if (!(day.pauses || []).some(p => p.id === pauseId)) return day;
+  return {
+    ...day,
+    pauses: (day.pauses || []).filter(p => p.id !== pauseId),
     updatedAt: now,
     syncStatus: "pending"
   };
@@ -118,57 +234,18 @@ export function setTotalPauseMinutes(day, desiredMinutes, now = Date.now()) {
 
   const otherPauses = (day.pauses || []).filter(p => !Number.isFinite(p?.durationMinutes));
   const manualNeeded = Math.max(0, desired - timed);
-
   const pauses = manualNeeded > 0
     ? [...otherPauses, {
         id: crypto.randomUUID(),
         manual: true,
+        source: "duration",
         durationMinutes: manualNeeded,
         createdAt: now,
         totalOverride: true
       }]
     : otherPauses;
 
-  return {
-    ...day,
-    pauses,
-    updatedAt: now,
-    syncStatus: "pending"
-  };
-}
-
-export function addManualPauseRange(day, startValue, endValue, baseDate = new Date()) {
-  const startMinutes = parseTimeToMinutes(startValue);
-  const endMinutes = parseTimeToMinutes(endValue);
-
-  if (startMinutes === null || endMinutes === null) {
-    throw new Error("Heure de début ou de fin invalide");
-  }
-  if (endMinutes <= startMinutes) {
-    throw new Error("L’heure de fin doit être après l’heure de début");
-  }
-
-  const start = new Date(baseDate);
-  start.setHours(Math.floor(startMinutes / 60), startMinutes % 60, 0, 0);
-
-  const end = new Date(baseDate);
-  end.setHours(Math.floor(endMinutes / 60), endMinutes % 60, 0, 0);
-
-  const now = Date.now();
-
-  return {
-    ...day,
-    pauses: [...(day.pauses || []), {
-      id: crypto.randomUUID(),
-      manual: true,
-      range: true,
-      startTs: start.getTime(),
-      endTs: end.getTime(),
-      createdAt: now
-    }],
-    updatedAt: now,
-    syncStatus: "pending"
-  };
+  return { ...day, pauses, updatedAt: now, syncStatus: "pending" };
 }
 
 export function calculateDay(day, now = Date.now()) {
@@ -210,12 +287,7 @@ export function calculateDay(day, now = Date.now()) {
 }
 
 export function setArrivalNow(day, now = Date.now()) {
-  return {
-    ...day,
-    arrivalTs: now,
-    updatedAt: now,
-    syncStatus: "pending"
-  };
+  return { ...day, arrivalTs: now, updatedAt: now, syncStatus: "pending" };
 }
 
 export function setArrivalManual(day, timeValue, now = new Date()) {
@@ -223,19 +295,20 @@ export function setArrivalManual(day, timeValue, now = new Date()) {
   if (minutes === null) throw new Error("Heure invalide");
   const d = new Date(now);
   d.setHours(Math.floor(minutes / 60), minutes % 60, 0, 0);
-  return {
-    ...day,
-    arrivalTs: d.getTime(),
-    updatedAt: Date.now(),
-    syncStatus: "pending"
-  };
+  return { ...day, arrivalTs: d.getTime(), updatedAt: Date.now(), syncStatus: "pending" };
 }
 
 export function startPause(day, now = Date.now()) {
   if (!day?.arrivalTs || activePause(day)) return day;
   return {
     ...day,
-    pauses: [...(day.pauses || []), { id: crypto.randomUUID(), startTs: now, endTs: null }],
+    pauses: [...(day.pauses || []), {
+      id: crypto.randomUUID(),
+      source: "timer",
+      startTs: now,
+      endTs: null,
+      createdAt: now
+    }],
     updatedAt: now,
     syncStatus: "pending"
   };
@@ -246,7 +319,7 @@ export function stopPause(day, now = Date.now()) {
   if (!current) return day;
   return {
     ...day,
-    pauses: day.pauses.map(p => p.id === current.id ? { ...p, endTs: now } : p),
+    pauses: (day.pauses || []).map(p => p.id === current.id ? { ...p, endTs: now, updatedAt: now } : p),
     updatedAt: now,
     syncStatus: "pending"
   };
