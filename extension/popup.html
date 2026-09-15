@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>TimePilot</title>
+  <link rel="stylesheet" href="./popup.css">
+</head>
+<body>
+  <main class="popup">
+    <header>
+      <div>
+        <p class="eyebrow">TIMEPILOT</p>
+        <strong id="todayLabel">Aujourd’hui</strong>
+      </div>
+      <span class="local">Local</span>
+    </header>
+
+    <section class="hero">
+      <span>Départ estimé</span>
+      <div id="departure">--:--</div>
+      <small id="departureHint">8h + 30 min de pause obligatoire</small>
+      <div class="progress"><div id="progressBar"></div></div>
+      <div class="hero-meta">
+        <span><b id="worked">00h00</b><small>travail</small></span>
+        <span><b id="remaining">08h00</b><small>reste</small></span>
+        <span><b id="pauseTotal">00h00</b><small>pause totale</small></span>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="row">
+        <div>
+          <div class="label">Arrivée</div>
+          <div id="arrivalDisplay" class="big">Non pointée</div>
+        </div>
+        <button id="clockInBtn" class="primary compact">Pointer</button>
+      </div>
+      <button id="toggleArrivalEditor" class="text-btn">Modifier l’heure</button>
+
+      <div id="arrivalEditor" class="editor" hidden>
+        <div class="time-grid">
+          <select id="arrivalHour"></select>
+          <span>:</span>
+          <select id="arrivalMinute"></select>
+        </div>
+        <button id="saveArrivalEditor" class="primary">Enregistrer</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="row">
+        <div>
+          <div class="label">Statut</div>
+          <div id="status" class="big small-big">Journée non démarrée</div>
+          <div id="pauseInfo" class="hint">30 min de pause minimum.</div>
+        </div>
+        <span id="statusDot" class="status-dot"></span>
+      </div>
+
+      <button id="pauseBtn" class="primary full" disabled>Commencer une pause</button>
+
+      <div class="pause-summary">
+        <span>Obligatoire incluse <b id="mandatoryPauseState">0 / 30 min</b></span>
+        <span>Supplémentaire <b id="extraPauseState">0 min</b></span>
+      </div>
+      <div id="pauseExplanation" class="hint explanation">Pause totale : 0 min</div>
+
+      <div class="quick">
+        <button class="quick-add" data-minutes="5">+5</button>
+        <button class="quick-add" data-minutes="10">+10</button>
+        <button class="quick-add" data-minutes="15">+15</button>
+        <button class="quick-add" data-minutes="30">+30</button>
+      </div>
+
+      <button id="toggleManualPause" class="text-btn">+ Ajouter / corriger une pause</button>
+
+      <div id="manualPausePanel" class="editor" hidden>
+        <div class="segments">
+          <button id="modeRange" class="segment active">Plage</button>
+          <button id="modeTotal" class="segment">Total</button>
+        </div>
+
+        <div id="rangePanel">
+          <div class="range-cols">
+            <div>
+              <small>Début</small>
+              <div class="time-grid mini">
+                <select id="pauseStartHour"></select><span>:</span><select id="pauseStartMinute"></select>
+              </div>
+            </div>
+            <div>
+              <small>Fin</small>
+              <div class="time-grid mini">
+                <select id="pauseEndHour"></select><span>:</span><select id="pauseEndMinute"></select>
+              </div>
+            </div>
+          </div>
+          <div id="pausePreview" class="hint preview">Durée : -- min</div>
+          <button id="addPauseRangeBtn" class="primary full">Ajouter</button>
+        </div>
+
+        <div id="totalPanel" hidden>
+          <div class="total-row">
+            <input id="manualPauseTotal" type="number" min="0" max="600" placeholder="46">
+            <span>min</span>
+          </div>
+          <button id="setPauseTotalBtn" class="primary full">Mettre à jour</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="card storage">
+      <div class="label">Stockage</div>
+      <div id="storageSize" class="big small-big">Calcul…</div>
+      <div class="hint">90 jours détaillés • résumé jusqu’à 1 an</div>
+      <div class="storage-actions">
+        <button id="exportDataBtn">Exporter</button>
+        <button id="cleanupBtn">Nettoyer</button>
+      </div>
+    </section>
+
+    <p id="message" class="message" aria-live="polite"></p>
+  </main>
+  <script type="module" src="./popup.js"></script>
+</body>
+</html>
