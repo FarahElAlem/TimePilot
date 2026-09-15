@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#111827">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <title>TimePilot</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icons/icon-192.png">
+  <link rel="apple-touch-icon" href="./icons/icon-192.png">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <main class="app-shell">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">TIMEPILOT</p>
+        <h1 id="todayLabel">Aujourd’hui</h1>
+      </div>
+      <span id="offlineBadge" class="badge">Local</span>
+    </header>
+
+    <section class="hero card hero-card">
+      <div class="hero-top">
+        <div>
+          <p class="label">Départ estimé</p>
+          <div id="departure" class="departure">--:--</div>
+          <p id="departureHint" class="muted">8h de travail + 30 min de pause obligatoire.</p>
+        </div>
+        <div class="progress-ring" aria-hidden="true">
+          <svg viewBox="0 0 44 44">
+            <circle class="ring-bg" cx="22" cy="22" r="18"></circle>
+            <circle id="progressRing" class="ring-fg" cx="22" cy="22" r="18"></circle>
+          </svg>
+          <span id="progressPct">0%</span>
+        </div>
+      </div>
+      <div class="progress-line"><div id="progressBar"></div></div>
+      <div class="hero-meta">
+        <span><b id="worked">00h00</b><small>travaillé</small></span>
+        <span><b id="remaining">08h00</b><small>reste à travailler</small></span>
+        <span><b id="pauseTotal">00h00</b><small>pause totale</small></span>
+        <span><b id="departureMini">--:--</b><small>départ</small></span>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="section-head">
+        <div>
+          <p class="label">Arrivée</p>
+          <strong id="arrivalDisplay" class="section-value">Non pointée</strong>
+          <p id="arrivalStatus" class="muted">Pointe ton arrivée en un clic.</p>
+        </div>
+        <button id="clockInBtn" class="primary compact">Pointer</button>
+      </div>
+      <button id="openArrivalEditor" class="text-button" type="button">Modifier l’heure manuellement</button>
+      <div id="arrivalEditor" class="editor-panel" hidden>
+        <div class="time-picker">
+          <label><span>Heure</span><select id="arrivalHour" aria-label="Heure d’arrivée"></select></label>
+          <span class="time-separator">:</span>
+          <label><span>Minute</span><select id="arrivalMinute" aria-label="Minute d’arrivée"></select></label>
+        </div>
+        <div class="editor-actions">
+          <button id="cancelArrivalEditor" class="secondary">Annuler</button>
+          <button id="saveArrivalEditor" class="primary">Enregistrer</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="section-head pause-head">
+        <div>
+          <p class="label">Statut</p>
+          <strong id="status" class="section-value">Journée non démarrée</strong>
+          <p id="pauseInfo" class="muted">30 min de pause minimum.</p>
+        </div>
+        <span id="statusDot" class="status-dot"></span>
+      </div>
+
+      <button id="pauseBtn" class="primary full" disabled>Commencer une pause</button>
+
+      <div class="pause-summary">
+        <div><span class="label">Pause obligatoire incluse</span><strong id="mandatoryPauseState">0 / 30 min</strong></div>
+        <div><span class="label">Pause supplémentaire</span><strong id="extraPauseState">0 min</strong></div>
+      </div>
+      <p id="pauseExplanation" class="pause-explanation">Pause totale : <strong>0 min</strong> • 30 min obligatoires minimum</p>
+
+      <div class="quick-section">
+        <span class="mini-title">Ajout rapide</span>
+        <div class="quick-buttons">
+          <button class="chip quick-add" data-minutes="5">+5</button>
+          <button class="chip quick-add" data-minutes="10">+10</button>
+          <button class="chip quick-add" data-minutes="15">+15</button>
+          <button class="chip quick-add" data-minutes="30">+30</button>
+        </div>
+      </div>
+
+      <button id="openManualPause" class="text-button" type="button">+ Ajouter / corriger une pause manuellement</button>
+      <div id="manualPausePanel" class="editor-panel" hidden>
+        <div class="segmented" role="tablist" aria-label="Mode d'ajout de pause">
+          <button id="pauseModeRange" class="segment active" type="button">Plage horaire</button>
+          <button id="pauseModeTotal" class="segment" type="button">Durée totale</button>
+        </div>
+        <div id="pauseRangePanel">
+          <div class="range-grid">
+            <div>
+              <span class="mini-title">Début</span>
+              <div class="time-picker compact-picker">
+                <select id="pauseStartHour" aria-label="Heure début pause"></select><span class="time-separator">:</span><select id="pauseStartMinute" aria-label="Minute début pause"></select>
+              </div>
+            </div>
+            <div>
+              <span class="mini-title">Fin</span>
+              <div class="time-picker compact-picker">
+                <select id="pauseEndHour" aria-label="Heure fin pause"></select><span class="time-separator">:</span><select id="pauseEndMinute" aria-label="Minute fin pause"></select>
+              </div>
+            </div>
+          </div>
+          <p id="manualPausePreview" class="preview">Durée : -- min</p>
+          <button id="addPauseRangeBtn" class="primary full">Ajouter cette pause</button>
+        </div>
+        <div id="pauseTotalPanel" hidden>
+          <label class="total-input-wrap">
+            <span class="mini-title">Pause totale aujourd’hui</span>
+            <div class="total-input"><input id="manualPauseTotal" type="number" min="0" max="600" step="1" inputmode="numeric" placeholder="46"><span>min</span></div>
+          </label>
+          <p class="muted">Exemple : 46 = 30 min obligatoires + 16 min supplémentaires.</p>
+          <button id="setPauseTotalBtn" class="primary full">Mettre à jour le total</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="section-head"><div><p class="label">Historique récent</p><strong class="section-value small">Tes derniers jours</strong></div></div>
+      <div id="history" class="history"></div>
+    </section>
+
+    <section class="card storage-card">
+      <div class="section-head"><div><p class="label">Stockage local</p><strong id="storageSize" class="section-value small">Calcul…</strong><p class="muted">Détails 90 jours • résumé ensuite • suppression après 1 an.</p></div></div>
+      <div class="storage-actions">
+        <button id="exportDataBtn" class="secondary">Exporter</button>
+        <button id="cleanupBtn" class="secondary">Nettoyer</button>
+        <button id="clearAllBtn" class="danger">Tout effacer</button>
+      </div>
+    </section>
+
+    <p id="message" class="toast" aria-live="polite"></p>
+  </main>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
