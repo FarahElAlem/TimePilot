@@ -8,7 +8,8 @@ Application personnelle de suivi du temps de travail, pensée pour fonctionner e
 - 30 minutes de pause minimum obligatoires.
 - Départ prévu = arrivée + 8h + max(30 min, pauses réelles).
 - L'heure d'arrivée se pointe en un clic et peut être corrigée manuellement.
-- Les pauses peuvent être pointées, ajoutées rapidement (+5 / +10 / +15 / +30) ou saisies manuellement par plage horaire / durée totale.
+- Les pauses peuvent être pointées, ajoutées rapidement (+5 / +10 / +15 / +30) ou saisies manuellement par période ou par durée.
+- Chaque pause est conservée séparément et peut être modifiée ou supprimée.
 - Les calculs utilisent des timestamps : fermer l'interface pendant une pause ne casse pas le compteur.
 
 ## Extension Chrome
@@ -23,7 +24,7 @@ Les données sont stockées dans `chrome.storage.local`.
 
 ## PWA mobile / iPhone
 
-Le dossier `pwa` doit être servi en HTTPS (GitHub Pages convient).
+Le dossier `pwa` est déployé avec GitHub Pages.
 
 Pour l'iPhone :
 1. ouvrir l'URL dans Safari ;
@@ -52,13 +53,13 @@ Le dossier `supabase/schema.sql` prépare les tables sécurisées pour une futur
 
 La synchronisation pourra fonctionner avec une file locale `pending`, push/pull lorsque la connexion revient et résolution simple des conflits via `updated_at`.
 
-## Version actuelle — v1.4
+## Version actuelle — v1.5
 
-- Affichage explicite de la pause totale.
-- La pause obligatoire est incluse dans le total (`30 / 30 min ✓`).
-- Les minutes supplémentaires sont affichées séparément.
-- Temps restant à travailler visible dans le résumé.
-- Time picker pour l'arrivée et les pauses manuelles.
-- Barre de progression de la journée.
-- PWA mobile + extension Chrome.
-- Fonctionnement offline.
+- Gestion des pauses sous forme de liste détaillée.
+- Ajout d'une pause par **durée** ou par **période**.
+- Les nouvelles pauses s'ajoutent au total existant au lieu de le remplacer.
+- Modification et suppression individuelles des pauses.
+- Possibilité d'annuler une pause en cours.
+- Protection contre le chevauchement de périodes de pause.
+- Recalcul automatique du total des pauses, du temps travaillé et de l'heure de départ.
+- Fonctionnement PWA/offline et extension Chrome conservé.
