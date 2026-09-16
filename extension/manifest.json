@@ -1,11 +1,14 @@
 {
   "manifest_version": 3,
   "name": "TimePilot",
-  "version": "1.5.0",
-  "description": "Pointe l'arrivée, les pauses et calcule automatiquement l'heure de départ sur une base de 8h + 30 min de pause obligatoire.",
+  "version": "1.6.0",
+  "description": "Pointe l'arrivée, les pauses et synchronise TimePilot entre Chrome et mobile avec Supabase.",
   "permissions": [
     "downloads",
     "storage"
+  ],
+  "host_permissions": [
+    "https://nusrnzrdfknvcgqccrac.supabase.co/*"
   ],
   "action": {
     "default_title": "TimePilot",
