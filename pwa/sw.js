@@ -1,9 +1,10 @@
-const CACHE = "timepilot-v6";
+const CACHE = "timepilot-v7";
 const ASSETS = [
   "./",
   "./index.html",
   "./styles.css",
   "./app.js",
+  "./sync-ui.js",
   "./core.js",
   "./db.js",
   "./manifest.webmanifest",
